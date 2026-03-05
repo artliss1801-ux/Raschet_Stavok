@@ -76,7 +76,7 @@ const RETURN_CARGO_DB: Record<string, ReturnCargoData> = {
 function getRegionByCityName(cityName: string): string {
   const name = cityName?.toLowerCase() || '';
   
-  if (name.includes('москва') || name.includes('чехов') || name.includes('подольск') || name.includes('химки') || name.includes('калуга')) return 'moscow';
+  if (name.includes('москва') || name.includes('чехов') || name.includes('подольск') || name.includes('химки') || name.includes('калуга') || name.includes('пушкино')) return 'moscow';
   if (name.includes('санкт-петербург') || name.includes('питер')) return 'spb';
   if (name.includes('новороссийск') || name.includes('краснодар') || name.includes('сочи') || name.includes('анапа')) return 'krasnodar';
   if (name.includes('пятигорск') || name.includes('кисловодск') || name.includes('ессентуки') || name.includes('минеральные')) return 'kmv';
@@ -87,6 +87,7 @@ function getRegionByCityName(cityName: string): string {
   if (name.includes('казань') || name.includes('самара') || name.includes('саратов')) return 'povolzhye';
   if (name.includes('волгоград') || name.includes('астрахань')) return 'south';
   if (name.includes('екатеринбург') || name.includes('челябинск') || name.includes('копейск')) return 'ural';
+  if (name.includes('нижний новгород')) return 'nnovgorod_region';
   if (name.includes('минск') || name.includes('брест') || name.includes('гомель')) return 'belarus';
   
   return 'central';
@@ -401,7 +402,7 @@ export function calculateRate(input: CalculationInput): CalculationResult {
       appliedFactors.push(`📍 Доп. точки: +${formatNumber(additionalPointsPremium)} руб`);
     }
 
-    finalRate = Math.round(finalRate / 100) * 100;
+    finalRate = Math.round(finalRate / 1000) * 1000;
     const effectiveRatePerKm = Math.round(finalRate / distanceNTtoKT);
 
     // ============================================

@@ -163,9 +163,13 @@ function getFallbackCities(query: string): CityResult[] {
     
     // Московская область
     { id: 'chekhov', name: 'Чехов', fullName: 'г. Чехов', region: 'Московская область', country: 'RU', type: 'г', lat: 55.35, lon: 37.45 },
+    { id: 'pushkino', name: 'Пушкино', fullName: 'г. Пушкино', region: 'Московская область', country: 'RU', type: 'г', lat: 56.01, lon: 37.85 },
     { id: 'balashiha', name: 'Балашиха', fullName: 'Балашиха', region: 'Московская область', country: 'RU', type: 'г', lat: 55.796, lon: 37.938 },
     { id: 'podolsk', name: 'Подольск', fullName: 'Подольск', region: 'Московская область', country: 'RU', type: 'г', lat: 55.432, lon: 37.553 },
     { id: 'khimki', name: 'Химки', fullName: 'Химки', region: 'Московская область', country: 'RU', type: 'г', lat: 55.894, lon: 37.434 },
+    
+    // Калужская область
+    { id: 'kaluga', name: 'Калуга', fullName: 'Калуга', region: 'Калужская область', country: 'RU', type: 'г', lat: 54.513, lon: 36.261 },
     
     // Чеченская Республика
     { id: 'grozny', name: 'Грозный', fullName: 'Грозный', region: 'Чеченская Республика', country: 'RU', type: 'г', lat: 43.3179, lon: 45.6983 },

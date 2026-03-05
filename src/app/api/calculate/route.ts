@@ -29,6 +29,8 @@ const CITY_ID_TO_NAME: Record<string, string> = {
   'vladivostok': 'Владивосток',
   'stavropol-city': 'Ставрополь',
   'chekhov': 'Чехов',
+  'pushkino': 'Пушкино',
+  'kaluga': 'Калуга',
   'balashiha': 'Балашиха',
   'podolsk': 'Подольск',
   'khimki': 'Химки',
