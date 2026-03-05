@@ -4,6 +4,82 @@ import { calculateRate, CalculationInput, CalculationResult } from '@/lib/calcul
 // Google Sheets Web App URL
 const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwh0gcSObkcqfGKUQTPHoBcZduYhSZ7_2vjIpmGYbma87gQpLW3TCTvN1Uknn9jfSL2/exec';
 
+// Маппинг ID городов в названия (для fallback если fromName/toName не переданы)
+const CITY_ID_TO_NAME: Record<string, string> = {
+  'moscow': 'Москва',
+  'spb': 'Санкт-Петербург',
+  'novorossiysk': 'Новороссийск',
+  'krasnodar': 'Краснодар',
+  'rostov': 'Ростов-на-Дону',
+  'pyatigorsk': 'Пятигорск',
+  'minvody': 'Минеральные Воды',
+  'kislovodsk': 'Кисловодск',
+  'essentuki': 'Ессентуки',
+  'sochi': 'Сочи',
+  'volgograd': 'Волгоград',
+  'ekaterinburg': 'Екатеринбург',
+  'kazan': 'Казань',
+  'novosibirsk': 'Новосибирск',
+  'nnovgorod': 'Нижний Новгород',
+  'samara': 'Самара',
+  'ufa': 'Уфа',
+  'chelyabinsk': 'Челябинск',
+  'voronezh': 'Воронеж',
+  'anapa': 'Анапа',
+  'vladivostok': 'Владивосток',
+  'stavropol-city': 'Ставрополь',
+  'chekhov': 'Чехов',
+  'balashiha': 'Балашиха',
+  'podolsk': 'Подольск',
+  'khimki': 'Химки',
+  'grozny': 'Грозный',
+  'znamenskoe-chechen': 'Знаменское',
+  'gudermes': 'Гудермес',
+  'argun': 'Аргун',
+  'shalazhi': 'Шали',
+  'urus-martan': 'Урус-Мартан',
+  'makhachkala': 'Махачкала',
+  'khasavyurt': 'Хасавюрт',
+  'derbent': 'Дербент',
+  'nalchik': 'Нальчик',
+  'vladikavkaz': 'Владикавказ',
+  'nazran': 'Назрань',
+  'cherkessk': 'Черкесск',
+  'maikop': 'Майкоп',
+  'minsk': 'Минск',
+  'brest': 'Брест',
+  'gomel': 'Гомель',
+  'vitebsk': 'Витебск',
+  'mogilev': 'Могилёв',
+  'grodno': 'Гродно',
+  'bobruysk': 'Бобруйск',
+  'baranovichi': 'Барановичи',
+  'borisov': 'Борисов',
+  'pinsk': 'Пинск',
+  'orsha': 'Орша',
+  'mozyr': 'Мозырь',
+  'soligorsk': 'Солигорск',
+};
+
+// Функция для получения названия города из ID или названия
+function getCityName(idOrName: string | undefined, providedName: string | undefined): string {
+  if (providedName && !providedName.match(/^[a-z-]+$/)) {
+    // Если передано нормальное название (не ID), используем его
+    return providedName;
+  }
+  if (idOrName) {
+    // Проверяем, это ID или название
+    if (CITY_ID_TO_NAME[idOrName]) {
+      return CITY_ID_TO_NAME[idOrName];
+    }
+    // Если это не ID, значит уже название
+    if (!idOrName.match(/^[a-z-]+$/)) {
+      return idOrName;
+    }
+  }
+  return idOrName || '';
+}
+
 // Запрос к Google Sheets для получения расстояния
 async function getDistanceFromGoogleSheets(data: Record<string, string>): Promise<{ distance: number; success: boolean; error?: string }> {
   try {
@@ -71,6 +147,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    console.log('[API] Incoming request body:', JSON.stringify(body, null, 2));
+
     const { 
       cityFrom, cityTo, containerType, cargoWeight, transportMode, dangerType,
       additionalPoints = 0, gensetRequired, onEdge,
@@ -80,6 +158,11 @@ export async function POST(request: NextRequest) {
       tzpCity, tzpCoords, tzpName,
       ntCity, ntCoords, ntName,
     } = body;
+
+    console.log('[API] Extracted values:', {
+      cityFrom, cityTo, fromName, toName,
+      transportMode, containerType, cargoWeight
+    });
 
     // Валидация
     if (!cityFrom || !cityTo) {
@@ -98,9 +181,14 @@ export async function POST(request: NextRequest) {
     
     const isExportDirect = transportMode === 'EXPORT_DIRECT';
     
-    // Названия городов
-    const fromCityName = fromName || cityFrom;
-    const toCityName = toName || cityTo;
+    // Названия городов - конвертируем ID в названия если нужно
+    const fromCityName = getCityName(cityFrom, fromName);
+    const toCityName = getCityName(cityTo, toName);
+    
+    console.log('[API] City names for distance:', { 
+      cityFrom, fromName, fromCityName,
+      cityTo, toName, toCityName 
+    });
     
     // Для расчёта расстояния
     let sheetsData: Record<string, string> = {};
@@ -109,28 +197,28 @@ export async function POST(request: NextRequest) {
       // ЭКСПОРТ: НТ → ТЗП → ТЗ → КТ → НТ
       // Нужно рассчитать несколько расстояний
       
-      const NT = ntName || ntCity || '';           // Начальная точка
-      const TZP = tzpName || tzpCity || '';        // Точка забора порожнего
-      const TZ = fromCityName;                      // Точка загрузки
-      const KT = toCityName;                        // Конечная точка
-      const TSP = tspDifferentFromNt ? (tspName || tspCity || '') : '';
+      const NT = getCityName(ntCity, ntName);           // Начальная точка
+      const TZP = getCityName(tzpCity, tzpName);        // Точка забора порожнего
+      const TZ = fromCityName;                          // Точка загрузки
+      const KT = toCityName;                            // Конечная точка
+      const TSP = tspDifferentFromNt ? getCityName(tspCity, tspName) : '';
       
-      sheetsData = { NT, TZP, TZ, KT, TSP };
+      sheetsData = { NT, TZP, TZ, KT };
+      if (TSP) sheetsData.TSP = TSP;
     } else {
-      // ГТД, ВТТ, МТТ: ТЗ → КТ (один гружёный рейс)
-      // ТЗ = cityFrom, КТ = cityTo
-      // НТ совпадает с ТЗ (контейнер уже в точке загрузки)
+      // ГТД, ВТТ, МТТ: прямой маршрут НТ → КТ
+      // НТ = точка отправления (откуда грузим)
+      // КТ = точка назначения (куда везём)
       
-      const NT = fromCityName;  // Начальная точка = точка загрузки
-      const TZ = fromCityName;  // Точка загрузки
-      const KT = toCityName;    // Конечная точка
-      const TSP = tspDifferentFromNt ? (tspName || tspCity || '') : '';
+      const NT = fromCityName;  // Начальная точка = откуда
+      const KT = toCityName;    // Конечная точка = куда
+      const TSP = tspDifferentFromNt ? getCityName(tspCity, tspName) : '';
       
-      sheetsData = { NT, TZ, KT };
+      sheetsData = { NT, KT };
       if (TSP) sheetsData.TSP = TSP;
     }
     
-    console.log('[ROUTE] Mode:', transportMode, 'Data:', sheetsData);
+    console.log('[ROUTE] Mode:', transportMode, 'Data sent to Google Sheets:', sheetsData);
 
     // ============================================
     // ЗАПРОС РАССТОЯНИЯ
@@ -190,8 +278,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ...result,
       _debug: {
-        version: '4.2-fixed-logic',
+        version: '5.0-city-name-fix',
         transportMode,
+        input: {
+          cityFrom, cityTo, fromName, toName,
+        },
+        resolved: {
+          fromCityName,
+          toCityName,
+        },
         sentToSheets: sheetsData,
         receivedDistance: distance,
       }

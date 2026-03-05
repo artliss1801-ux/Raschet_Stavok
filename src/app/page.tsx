@@ -135,20 +135,20 @@ export default function Home() {
           </h2>
           <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-sm text-blue-800">
-              <strong>Формула:</strong> С = (Р × К) − Обр
+              <strong>Формула:</strong> С = Р × К
             </p>
             <p className="text-xs text-blue-600 mt-1">
-              С − ставка | Р − расстояние (км) | К − ставка за км | Обр − обратный груз
+              С − ставка | Р − расстояние (км) | К − ставка за км (зависит от расстояния и типа контейнера)
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div className="bg-slate-50 rounded-lg p-3">
-              <p className="text-slate-500">База 40HC</p>
-              <p className="font-semibold text-slate-700">110 руб/км</p>
+              <p className="text-slate-500">База 40HC (до 200 км)</p>
+              <p className="font-semibold text-slate-700">130 руб/км</p>
             </div>
             <div className="bg-slate-50 rounded-lg p-3">
               <p className="text-slate-500">Мин. ставка</p>
-              <p className="font-semibold text-slate-700">25 000 руб</p>
+              <p className="font-semibold text-slate-700">28 000 руб</p>
             </div>
             <div className="bg-slate-50 rounded-lg p-3">
               <p className="text-slate-500">Доп. точка</p>
