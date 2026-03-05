@@ -9,28 +9,28 @@
 
 // Минимальная ставка за рейс (руб)
 const MINIMUM_RATE = {
-  '40HC': 28000,
-  '45HC': 30000,
-  '20DC': 32000,
-  '20REF': 38000,
-  '40REF': 35000,
-  '20OT': 35000,
-  '40OT': 32000,
+  '40HC': 30000,
+  '45HC': 32000,
+  '20DC': 30000,
+  '20REF': 40000,
+  '40REF': 38000,
+  '20OT': 36000,
+  '40OT': 34000,
   '20FR': 38000,
-  '40FR': 35000,
+  '40FR': 36000,
 };
 
 // Ставка за км в зависимости от расстояния (для 40HC)
 // Рассчитано на основе реальных рыночных данных
 const DISTANCE_RATE_TIERS = [
-  { maxKm: 300, ratePerKm: 110 },   // 0-300 км: 110 руб/км
-  { maxKm: 600, ratePerKm: 100 },   // 300-600 км: 100 руб/км
-  { maxKm: 1000, ratePerKm: 90 },   // 600-1000 км: 90 руб/км
-  { maxKm: 1500, ratePerKm: 80 },   // 1000-1500 км: 80 руб/км
-  { maxKm: 2000, ratePerKm: 75 },   // 1500-2000 км: 75 руб/км
-  { maxKm: 2500, ratePerKm: 70 },   // 2000-2500 км: 70 руб/км
-  { maxKm: 3000, ratePerKm: 68 },   // 2500-3000 км: 68 руб/км
-  { maxKm: Infinity, ratePerKm: 65 }, // 3000+ км: 65 руб/км
+  { maxKm: 200, ratePerKm: 120 },   // 0-200 км: 120 руб/км (короткие маршруты)
+  { maxKm: 500, ratePerKm: 105 },   // 200-500 км: 105 руб/км
+  { maxKm: 1000, ratePerKm: 95 },   // 500-1000 км: 95 руб/км
+  { maxKm: 1500, ratePerKm: 85 },   // 1000-1500 км: 85 руб/км
+  { maxKm: 2000, ratePerKm: 82 },   // 1500-2000 км: 82 руб/км (СПб)
+  { maxKm: 2500, ratePerKm: 78 },   // 2000-2500 км: 78 руб/км
+  { maxKm: 3000, ratePerKm: 72 },   // 2500-3000 км: 72 руб/км
+  { maxKm: Infinity, ratePerKm: 68 }, // 3000+ км: 68 руб/км
 ];
 
 // Коэффициент для 20-футовых контейнеров (они дороже)
@@ -81,9 +81,11 @@ export const REGIONAL_COEFFICIENTS: Record<string, number> = {
   // Популярные направления (много обраток, ниже ставки)
   'moscow': 0.95,
   'moscow_region': 0.95,
-  'spb': 0.97,
-  'krasnodar': 0.98,
+  'krasnodar': 1.00,
   'chernozem': 1.00,
+  
+  // Санкт-Петербург - повышенная ставка (далеко от порта)
+  'spb': 1.15,
   
   // Стандартные
   'central': 1.00,
@@ -148,8 +150,8 @@ function getRatePerKmForDistance(distance: number): number {
   return DISTANCE_RATE_TIERS[DISTANCE_RATE_TIERS.length - 1].ratePerKm;
 }
 
-// Получить коэффициент контейнера
-function getContainerCoef(containerType: string): number {
+// Получить коэффициент контейнера (зависит от расстояния)
+function getContainerCoef(containerType: string, distance: number): number {
   const size = containerType.startsWith('20') ? '20' : 
                containerType.startsWith('45') ? '45' : '40';
   const type = containerType.includes('REF') ? 'REF' :
@@ -157,7 +159,22 @@ function getContainerCoef(containerType: string): number {
                containerType.includes('FR') ? 'FR' :
                containerType.includes('HC') ? 'HC' : 'DC';
   
-  return CONTAINER_SIZE_COEF[size] * CONTAINER_TYPE_COEF[type];
+  let sizeCoef = CONTAINER_SIZE_COEF[size];
+  
+  // На коротких расстояниях разница между 20 и 40 футами минимальна
+  // На длинных - полная разница
+  if (size === '20') {
+    if (distance <= 200) {
+      sizeCoef = 1.00;  // Короткие: 20DC = 40HC
+    } else if (distance <= 500) {
+      sizeCoef = 1.05;  // Средние: небольшая разница
+    } else if (distance <= 1000) {
+      sizeCoef = 1.10;  // Нормальные
+    }
+    // else: полные 1.15 для дальних
+  }
+  
+  return sizeCoef * CONTAINER_TYPE_COEF[type];
 }
 
 export function calculateCostPerKm(input: CostCalculationInput): CostBreakdown {
@@ -167,8 +184,8 @@ export function calculateCostPerKm(input: CostCalculationInput): CostBreakdown {
   // Базовая ставка за км для расстояния (для 40HC)
   const baseRatePerKm = getRatePerKmForDistance(distance);
   
-  // Коэффициент типа контейнера
-  const containerCoef = getContainerCoef(input.containerType);
+  // Коэффициент типа контейнера (зависит от расстояния!)
+  const containerCoef = getContainerCoef(input.containerType, distance);
   
   // Коэффициенты
   const seasonalCoef = getSeasonalCoefficient();
@@ -224,7 +241,7 @@ export function getCurrentParams() {
   return {
     lastUpdated: '2025-01',
     baseRateSource: 'рыночные ставки контейнерных перевозок',
-    model: 'v9.0 обученный на реальных данных',
+    model: 'v10.0 динамические коэффициенты по расстоянию',
   };
 }
 
