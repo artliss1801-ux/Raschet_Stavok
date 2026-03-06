@@ -21,6 +21,7 @@ import {
   ContainerType,
   TransportMode,
   DangerType,
+  PlacementType,
 } from '@/lib/data/constants';
 
 export interface RateFormData {
@@ -32,6 +33,8 @@ export interface RateFormData {
   dangerType: DangerType;
   additionalPoints: number;
   gensetRequired: boolean;
+  // Размещение 20-футового контейнера
+  placementType: PlacementType;
   // ТСП (точка сдачи порожнего)
   tspDifferentFromNt: boolean;
   tspCity?: string;
@@ -67,6 +70,7 @@ export function RateForm({ onSubmit, isLoading }: RateFormProps) {
     dangerType: 'none',
     additionalPoints: 0,
     gensetRequired: false,
+    placementType: 'edge',
     tspDifferentFromNt: false,
     tspCity: '',
   });
@@ -81,6 +85,7 @@ export function RateForm({ onSubmit, isLoading }: RateFormProps) {
   const maxWeight = CONTAINER_TYPES.find((t) => t.value === formData.containerType)?.maxWeight || 30;
   const isReefer = formData.containerType.includes('REF');
   const isExportDirect = formData.transportMode === 'EXPORT_DIRECT';
+  const is20Foot = formData.containerType.startsWith('20');
 
   const handleWeightChange = (value: string) => {
     const numValue = parseFloat(value);
@@ -195,6 +200,13 @@ export function RateForm({ onSubmit, isLoading }: RateFormProps) {
       setFormData({ ...formData, gensetRequired: false });
     }
   }, [isReefer, formData.gensetRequired]);
+
+  // Сброс placementType при смене типа контейнера на не 20-футовый
+  React.useEffect(() => {
+    if (!is20Foot && formData.placementType === 'middle') {
+      setFormData({ ...formData, placementType: 'edge' });
+    }
+  }, [is20Foot, formData.placementType]);
 
   const isFormValid = () => {
     const basicValid = (
@@ -367,50 +379,64 @@ export function RateForm({ onSubmit, isLoading }: RateFormProps) {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Вес груза в контейнере</Label>
-            <Select
-              value={formData.cargoWeight.toString()}
-              onValueChange={(value) => {
-                const numValue = parseFloat(value);
-                setFormData({ ...formData, cargoWeight: numValue });
-                setWeightError(null);
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Выберите вес" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">Порожний</SelectItem>
-                <SelectItem value="10">до 10 т</SelectItem>
-                <SelectItem value="20">до 20 т</SelectItem>
-                <SelectItem value="20.5">20 т</SelectItem>
-                <SelectItem value="21">20,5 т</SelectItem>
-                <SelectItem value="21.5">21 т</SelectItem>
-                <SelectItem value="22">21,5 т</SelectItem>
-                <SelectItem value="22.5">22 т</SelectItem>
-                <SelectItem value="23">22,5 т</SelectItem>
-                <SelectItem value="23.5">23 т</SelectItem>
-                <SelectItem value="24">23,5 т</SelectItem>
-                <SelectItem value="24.5">24 т</SelectItem>
-                <SelectItem value="25">24,5 т</SelectItem>
-                <SelectItem value="25.5">25 т</SelectItem>
-                <SelectItem value="26">25,5 т</SelectItem>
-                <SelectItem value="26.5">26 т</SelectItem>
-                <SelectItem value="27">26,5 т</SelectItem>
-                <SelectItem value="27.5">27 т</SelectItem>
-                <SelectItem value="28">27,5 т</SelectItem>
-                <SelectItem value="28.5">28 т</SelectItem>
-                <SelectItem value="29">28,5 т</SelectItem>
-                <SelectItem value="29.5">29 т</SelectItem>
-                <SelectItem value="30">29,5 т</SelectItem>
-                <SelectItem value="30.5">30 т</SelectItem>
-              </SelectContent>
-            </Select>
-            {weightError && (
-              <p className="text-sm text-red-500">{weightError}</p>
-            )}
-          </div>
+          {/* Размещение 20-футового контейнера */}
+          {is20Foot && (
+            <div className="space-y-2">
+              <Label>Размещение контейнера</Label>
+              <Select
+                value={formData.placementType}
+                onValueChange={(value: PlacementType) =>
+                  setFormData({ ...formData, placementType: value })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Выберите размещение" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="edge">Под срез прицепа (стандарт)</SelectItem>
+                  <SelectItem value="middle">На середине прицепа (+12%)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500">
+                {formData.placementType === 'middle' 
+                  ? 'Усложнённая погрузка/разгрузка, требуется кран или спец. техника'
+                  : 'Стандартное размещение, удобная погрузка/разгрузка'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Вес груза в контейнере</Label>
+          <Select
+            value={formData.cargoWeight.toString()}
+            onValueChange={(value) => {
+              const numValue = parseFloat(value);
+              setFormData({ ...formData, cargoWeight: numValue });
+              setWeightError(null);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Выберите вес" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Порожний</SelectItem>
+              <SelectItem value="10">до 10 т</SelectItem>
+              <SelectItem value="15">до 15 т</SelectItem>
+              <SelectItem value="20">до 20 т</SelectItem>
+              <SelectItem value="21">до 21 т</SelectItem>
+              <SelectItem value="22">до 22 т</SelectItem>
+              <SelectItem value="23">до 23 т</SelectItem>
+              <SelectItem value="24">до 24 т</SelectItem>
+              <SelectItem value="25">до 25 т</SelectItem>
+              <SelectItem value="26">до 26 т</SelectItem>
+              <SelectItem value="27">до 27 т</SelectItem>
+              <SelectItem value="28">до 28 т</SelectItem>
+            </SelectContent>
+          </Select>
+          {weightError && (
+            <p className="text-sm text-red-500">{weightError}</p>
+          )}
         </div>
       </div>
 

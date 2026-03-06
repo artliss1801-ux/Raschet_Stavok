@@ -1,25 +1,30 @@
 // ============================================
-// МОДЕЛЬ РАСЧЁТА СТАВКИ v8.0
+// МОДЕЛЬ РАСЧЁТА СТАВКИ v11.0
 // ============================================
-// Формула: С = max(Минимум, Р × К)
+// Формула: С = max(Минимум, Р × К × М)
 //
 // С - ставка (руб)
 // Р - расстояние в один конец (км)
 // К - стоимость за километр (руб/км), зависит от расстояния
+// М - коэффициенты (контейнер, размещение, вес, регион, опасность)
 // Минимум - минимальная ставка за рейс (~28000-30000 руб)
 //
-// Ключевые изменения v8.0:
-// - Минимальная ставка за рейс
-// - Убывающая ставка за км для длинных расстояний
+// Ключевые изменения v11.0:
+// - Динамические коэффициенты 20DC по расстоянию
+// - Коэффициент размещения 20-футового контейнера
+// - Коэффициент тяжёлого груза (>24т)
+// - Международные перевозки (+45%)
+// Обновлено: март 2026
 // ============================================
 
 import { getCity } from './data/cities';
 import { calculateCostPerKm, REGIONAL_COEFFICIENTS, getSeasonalCoefficient } from './cost-calculation';
 
 // Типы контейнеров
-export type ContainerType = '20DC' | '20HC' | '40DC' | '40HC' | '45HC' | '20REF' | '40REF' | '20OT' | '40OT' | '20FR' | '40FR';
+export type ContainerType = '20DC' | '40HC' | '45HC' | '20REF' | '40REF' | '20OT' | '40OT' | '20FR' | '40FR';
 export type TransportMode = 'GTD' | 'VTT' | 'MTT' | 'EXPORT_DIRECT';
 export type DangerType = 'none' | 'dangerous' | 'dangerous_direct' | 'class1' | 'class2' | 'class3' | 'class4' | 'class5' | 'class6' | 'class7' | 'class8' | 'class9';
+export type PlacementType = 'edge' | 'middle';
 
 // Порты
 const PORT_CITIES = ['novorossiysk', 'spb', 'vladivostok', 'sochi', 'vostochny'];
@@ -39,6 +44,26 @@ const DANGER_COEFFICIENTS: Record<DangerType, number> = {
   'class8': 1.20,
   'class9': 1.15,
 };
+
+// Коэффициент размещения 20-футового контейнера
+const PLACEMENT_COEFFICIENTS: Record<PlacementType, number> = {
+  'edge': 1.00,     // Под срез прицепа (стандарт)
+  'middle': 1.12,   // На середине прицепа (+12%)
+};
+
+// Коэффициент тяжёлого груза
+function getHeavyWeightCoef(weight: number, region: string): number {
+  // Для Кавказа тяжёлые грузы дороже
+  const caucasusRegions = ['chechnya', 'dagestan', 'ingushetia', 'north_ossetia', 'kabardino', 'karachay'];
+  const isCaucasus = caucasusRegions.includes(region);
+  
+  if (weight >= 26) {
+    return isCaucasus ? 1.35 : 1.15;  // Сверхтяжёлый
+  } else if (weight >= 24) {
+    return isCaucasus ? 1.25 : 1.08;  // Тяжёлый
+  }
+  return 1.00;
+}
 
 // ============================================
 // БАЗА ОБРАТНЫХ ЗАГРУЗОК (для информации)
@@ -83,7 +108,7 @@ function getRegionByCityName(cityName: string): string {
   if (name.includes('грозный') || name.includes('знаменское') || name.includes('гудермес')) return 'chechnya';
   if (name.includes('махачкала') || name.includes('хасавюрт') || name.includes('дербент')) return 'dagestan';
   if (name.includes('воронеж') || name.includes('белгород') || name.includes('курск') || name.includes('липецк') || name.includes('тамбов')) return 'chernozem';
-  if (name.includes('ростов') || name.includes('таганрог')) return 'south';
+  if (name.includes('ростов') || name.includes('таганрог') || name.includes('батайск')) return 'south';
   if (name.includes('казань') || name.includes('самара') || name.includes('саратов')) return 'povolzhye';
   if (name.includes('волгоград') || name.includes('астрахань')) return 'south';
   if (name.includes('екатеринбург') || name.includes('челябинск') || name.includes('копейск')) return 'ural';
@@ -138,13 +163,18 @@ export interface CalculationInput {
   preCalculatedDistance?: number;
   fromName?: string;
   toName?: string;
+  // Размещение 20-футового контейнера
+  placementType?: PlacementType;
+  // ТСП
   tspName?: string;
   tspCoords?: { lat: number; lon: number };
   preCalculatedTspDistance?: number;
+  // ТЗП (экспорт)
   tzpCity?: string;
   tzpCoords?: { lat: number; lon: number };
   tzpName?: string;
   preCalculatedTzpDistance?: number;
+  // НТ (экспорт)
   ntCity?: string;
   ntCoords?: { lat: number; lon: number };
   ntName?: string;
@@ -201,6 +231,8 @@ export interface CalculationBreakdown {
   
   baseRate: number;
   dangerPremium: number;
+  placementPremium: number;
+  heavyWeightPremium: number;
   gensetPremium: number;
   onEdgePremium: number;
   additionalPointsPremium: number;
@@ -374,12 +406,29 @@ export function calculateRate(input: CalculationInput): CalculationResult {
     let gensetPremium = 0;
     let onEdgePremium = 0;
     let additionalPointsPremium = 0;
+    let placementPremium = 0;
+    let heavyWeightPremium = 0;
 
     // Надбавка за опасность (если применяется к минимуму, считаем отдельно)
     if (dangerCoef > 1) {
       dangerPremium = Math.round(baseRate * (dangerCoef - 1));
       finalRate += dangerPremium;
       appliedFactors.push(`⚠️ ADR: +${formatNumber(dangerPremium)} руб (×${dangerCoef.toFixed(2)})`);
+    }
+
+    // Надбавка за размещение 20-футового контейнера
+    if (input.containerType.startsWith('20') && input.placementType === 'middle') {
+      placementPremium = Math.round(baseRate * (PLACEMENT_COEFFICIENTS.middle - 1));
+      finalRate += placementPremium;
+      appliedFactors.push(`📦 Размещение на середине: +${formatNumber(placementPremium)} руб`);
+    }
+
+    // Надбавка за тяжёлый груз
+    const heavyCoef = getHeavyWeightCoef(input.cargoWeight, region);
+    if (heavyCoef > 1) {
+      heavyWeightPremium = Math.round(baseRate * (heavyCoef - 1));
+      finalRate += heavyWeightPremium;
+      appliedFactors.push(`⚖️ Тяжёлый груз (${input.cargoWeight}т): +${formatNumber(heavyWeightPremium)} руб`);
     }
 
     if (input.gensetRequired && input.containerType.includes('REF')) {
@@ -443,6 +492,8 @@ export function calculateRate(input: CalculationInput): CalculationResult {
       returnCargoDeduction: returnCargoCost,
       baseRate,
       dangerPremium,
+      placementPremium,
+      heavyWeightPremium,
       gensetPremium,
       onEdgePremium,
       additionalPointsPremium,

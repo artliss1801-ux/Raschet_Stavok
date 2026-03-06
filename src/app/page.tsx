@@ -131,7 +131,7 @@ export default function Home() {
         {/* Footer Info */}
         <div className="mt-8 bg-white rounded-lg border p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-700 mb-4">
-            Базовые параметры расчёта (2026)
+            Базовые параметры расчёта (март 2026)
           </h2>
           <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-sm text-blue-800">

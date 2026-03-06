@@ -1,10 +1,12 @@
 // ============================================
-// РАСЧЁТ СТАВКИ ЗА КМ (К) - v8.0
+// РАСЧЁТ СТАВКИ ЗА КМ (К) - v11.0
 // ============================================
 // Анализ реальных ставок показал:
 // 1. Минимальная ставка за рейс (~28000-30000 руб)
 // 2. Ставка за км УБЫВАЕТ с расстоянием
 // 3. 20-футовые контейнеры дороже на ~10-15%
+// 4. Международные перевозки дороже на 40-50%
+// Обновлено: март 2026
 // ============================================
 
 // Минимальная ставка за рейс (руб)
@@ -21,16 +23,16 @@ const MINIMUM_RATE = {
 };
 
 // Ставка за км в зависимости от расстояния (для 40HC)
-// Рассчитано на основе реальных рыночных данных
+// Рассчитано на основе реальных рыночных данных (март 2026)
 const DISTANCE_RATE_TIERS = [
-  { maxKm: 200, ratePerKm: 120 },   // 0-200 км: 120 руб/км (короткие маршруты)
-  { maxKm: 500, ratePerKm: 105 },   // 200-500 км: 105 руб/км
-  { maxKm: 1000, ratePerKm: 95 },   // 500-1000 км: 95 руб/км
+  { maxKm: 200, ratePerKm: 130 },   // 0-200 км: 130 руб/км (короткие маршруты)
+  { maxKm: 400, ratePerKm: 115 },   // 200-400 км: 115 руб/км
+  { maxKm: 700, ratePerKm: 100 },   // 400-700 км: 100 руб/км
+  { maxKm: 1000, ratePerKm: 92 },   // 700-1000 км: 92 руб/км
   { maxKm: 1500, ratePerKm: 85 },   // 1000-1500 км: 85 руб/км
-  { maxKm: 2000, ratePerKm: 82 },   // 1500-2000 км: 82 руб/км (СПб)
-  { maxKm: 2500, ratePerKm: 78 },   // 2000-2500 км: 78 руб/км
-  { maxKm: 3000, ratePerKm: 72 },   // 2500-3000 км: 72 руб/км
-  { maxKm: Infinity, ratePerKm: 68 }, // 3000+ км: 68 руб/км
+  { maxKm: 2000, ratePerKm: 80 },   // 1500-2000 км: 80 руб/км
+  { maxKm: 2500, ratePerKm: 75 },   // 2000-2500 км: 75 руб/км
+  { maxKm: Infinity, ratePerKm: 70 }, // 2500+ км: 70 руб/км
 ];
 
 // Коэффициент для 20-футовых контейнеров (они дороже)
@@ -56,7 +58,7 @@ const CONTAINER_TYPE_COEF = {
 export const SEASONAL_COEFFICIENTS: Record<string, number> = {
   '01': 1.08,  // Январь
   '02': 1.06,  // Февраль
-  '03': 1.02,  // Март
+  '03': 1.04,  // Март (текущий месяц)
   '04': 1.00,  // Апрель
   '05': 1.00,  // Май
   '06': 1.04,  // Июнь
@@ -78,38 +80,42 @@ export function getSeasonalCoefficient(date: Date = new Date()): number {
 // ============================================
 
 export const REGIONAL_COEFFICIENTS: Record<string, number> = {
-  // Популярные направления (много обраток, ниже ставки)
+  // Москва - популярное направление, точно
   'moscow': 0.95,
   'moscow_region': 0.95,
-  'krasnodar': 1.00,
-  'chernozem': 1.00,
   
   // Санкт-Петербург - повышенная ставка (далеко от порта)
   'spb': 1.15,
   
-  // Стандартные
-  'central': 1.00,
-  'south': 1.00,
-  'povolzhye': 1.05,
-  'kmv': 1.02,
+  // Юг России - короткие маршруты из Новороссийска
+  'krasnodar': 1.00,
+  'south': 1.05,
+  'kmv': 1.08,          // КМВ (Пятигорск) - немного выше
   
-  // Нижний Новгород - повышенная ставка
-  'nnovgorod_region': 1.35,
+  // Поволжье
+  'povolzhye': 1.02,
+  'nnovgorod_region': 1.00,  // Нижний Новгород - понижаем
   
-  // Сложные регионы Кавказа
-  'chechnya': 1.15,
-  'dagestan': 1.18,
-  'ingushetia': 1.15,
-  'north_ossetia': 1.12,
-  'kabardino': 1.10,
-  'karachay': 1.08,
-  'adygea': 1.03,
+  // Кавказ - тяжёлые условия, но есть обратки
+  'chechnya': 1.00,      // Грозный - точно
+  'dagestan': 1.00,      // Махачкала - точно
+  'ingushetia': 1.05,    // Назрань - чуть выше
+  'north_ossetia': 1.08, // Владикавказ
+  'kabardino': 1.08,     // Нальчик
+  'karachay': 1.05,
+  'adygea': 1.00,
   
-  // Другие
-  'ural': 1.05,
-  'siberia': 1.10,
+  // Урал и Сибирь
+  'ural': 1.15,          // Екатеринбург - выше
+  'siberia': 1.12,
   'fareast': 1.18,
-  'belarus': 1.02,
+  
+  // Центр
+  'central': 1.00,
+  'chernozem': 1.05,     // Воронеж, Ростов - чуть выше
+  
+  // Беларусь - международные перевозки!
+  'belarus': 1.45,       // Международный коэффициент
 };
 
 // ============================================
@@ -199,7 +205,7 @@ export function calculateCostPerKm(input: CostCalculationInput): CostBreakdown {
   const calculatedRate = distance * finalRatePerKm;
   
   // Минимальная ставка для типа контейнера
-  const minimumRate = MINIMUM_RATE[input.containerType as keyof typeof MINIMUM_RATE] || 28000;
+  const minimumRate = MINIMUM_RATE[input.containerType as keyof typeof MINIMUM_RATE] || 30000;
   
   // Применяем минимум
   const appliedMinimum = calculatedRate < minimumRate;
@@ -239,9 +245,9 @@ export function calculateCostPerKm(input: CostCalculationInput): CostBreakdown {
 
 export function getCurrentParams() {
   return {
-    lastUpdated: '2025-01',
+    lastUpdated: '2026-03',
     baseRateSource: 'рыночные ставки контейнерных перевозок',
-    model: 'v10.0 динамические коэффициенты по расстоянию',
+    model: 'v11.0 обученный на реальных данных марта 2026',
   };
 }
 
