@@ -420,18 +420,30 @@ export function RateForm({ onSubmit, isLoading }: RateFormProps) {
               <SelectValue placeholder="Выберите вес" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="0">Порожний</SelectItem>
+              <SelectItem value="0">порожний</SelectItem>
               <SelectItem value="10">до 10 т</SelectItem>
-              <SelectItem value="15">до 15 т</SelectItem>
-              <SelectItem value="20">до 20 т</SelectItem>
-              <SelectItem value="21">до 21 т</SelectItem>
-              <SelectItem value="22">до 22 т</SelectItem>
-              <SelectItem value="23">до 23 т</SelectItem>
-              <SelectItem value="24">до 24 т</SelectItem>
-              <SelectItem value="25">до 25 т</SelectItem>
-              <SelectItem value="26">до 26 т</SelectItem>
-              <SelectItem value="27">до 27 т</SelectItem>
-              <SelectItem value="28">до 28 т</SelectItem>
+              <SelectItem value="19">до 20 т</SelectItem>
+              <SelectItem value="20">20 т</SelectItem>
+              <SelectItem value="20.5">20,5 т</SelectItem>
+              <SelectItem value="21">21 т</SelectItem>
+              <SelectItem value="21.5">21,5 т</SelectItem>
+              <SelectItem value="22">22 т</SelectItem>
+              <SelectItem value="22.5">22,5 т</SelectItem>
+              <SelectItem value="23">23 т</SelectItem>
+              <SelectItem value="23.5">23,5 т</SelectItem>
+              <SelectItem value="24">24 т</SelectItem>
+              <SelectItem value="24.5">24,5 т</SelectItem>
+              <SelectItem value="25">25 т</SelectItem>
+              <SelectItem value="25.5">25,5 т</SelectItem>
+              <SelectItem value="26">26 т</SelectItem>
+              <SelectItem value="26.5">26,5 т</SelectItem>
+              <SelectItem value="27">27 т</SelectItem>
+              <SelectItem value="27.5">27,5 т</SelectItem>
+              <SelectItem value="28">28 т</SelectItem>
+              <SelectItem value="28.5">28,5 т</SelectItem>
+              <SelectItem value="29">29 т</SelectItem>
+              <SelectItem value="29.5">29,5 т</SelectItem>
+              <SelectItem value="30">30 т</SelectItem>
             </SelectContent>
           </Select>
           {weightError && (
