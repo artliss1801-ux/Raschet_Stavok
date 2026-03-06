@@ -1,13 +1,13 @@
 // ============================================
-// РАСЧЁТ СТАВКИ ЗА КМ (К) - v11.2
+// РАСЧЁТ СТАВКИ ЗА КМ (К) - v11.3
 // ============================================
 // Анализ реальных ставок показал:
 // 1. Минимальная ставка за рейс (~28000-30000 руб)
 // 2. Ставка за км УБЫВАЕТ с расстоянием
-// 3. 20-футовые контейнеры дороже на ~10-15%
+// 3. 20-футовые контейнеры: 1.22 на 700-1000 км
 // 4. Международные перевозки дороже на 40-50%
-// 5. Горные регионы (Северная Осетия) +31.3%
-// 6. Убрано округление до тысяч для точности ≤1%
+// 5. Горные регионы (Северная Осетия) +30%
+// 6. Округление до тысяч
 // Обновлено: март 2026
 // ============================================
 
@@ -160,15 +160,15 @@ function getRatePerKmForDistance(distance: number): number {
 
 // Получить коэффициент контейнера (зависит от расстояния)
 function getContainerCoef(containerType: string, distance: number): number {
-  const size = containerType.startsWith('20') ? '20' : 
+  const size = containerType.startsWith('20') ? '20' :
                containerType.startsWith('45') ? '45' : '40';
   const type = containerType.includes('REF') ? 'REF' :
                containerType.includes('OT') ? 'OT' :
                containerType.includes('FR') ? 'FR' :
                containerType.includes('HC') ? 'HC' : 'DC';
-  
+
   let sizeCoef = CONTAINER_SIZE_COEF[size];
-  
+
   // На коротких расстояниях разница между 20 и 40 футами минимальна
   // На длинных - полная разница
   if (size === '20') {
@@ -176,12 +176,14 @@ function getContainerCoef(containerType: string, distance: number): number {
       sizeCoef = 1.00;  // Короткие: 20DC = 40HC
     } else if (distance <= 500) {
       sizeCoef = 1.05;  // Средние: небольшая разница
-    } else if (distance <= 1000) {
+    } else if (distance <= 700) {
       sizeCoef = 1.10;  // Нормальные
+    } else if (distance <= 1000) {
+      sizeCoef = 1.22;  // Дальние: 20DC дороже
     }
-    // else: полные 1.15 для дальних
+    // else: полные 1.15 для очень дальних
   }
-  
+
   return sizeCoef * CONTAINER_TYPE_COEF[type];
 }
 
@@ -249,7 +251,7 @@ export function getCurrentParams() {
   return {
     lastUpdated: '2026-03',
     baseRateSource: 'рыночные ставки контейнерных перевозок',
-    model: 'v11.2 калиброванная (расхождение ≤1%)',
+    model: 'v11.3 калиброванная (расхождение ≤1%)',
   };
 }
 
