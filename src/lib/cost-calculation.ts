@@ -102,7 +102,7 @@ export const REGIONAL_COEFFICIENTS: Record<string, number> = {
   'chechnya': 1.00,      // Грозный - точно
   'dagestan': 1.00,      // Махачкала - точно
   'ingushetia': 1.05,    // Назрань - чуть выше
-  'north_ossetia': 1.313, // Владикавказ, Алагир, Беслан - горные условия (+31.3%)
+  'north_ossetia': 1.30, // Владикавказ, Алагир, Беслан - горные условия (+30%)
   'kabardino': 1.08,     // Нальчик
   'karachay': 1.05,
   'adygea': 1.00,

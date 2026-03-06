@@ -457,7 +457,7 @@ export function calculateRate(input: CalculationInput): CalculationResult {
       appliedFactors.push(`📍 Доп. точки: +${formatNumber(additionalPointsPremium)} руб`);
     }
 
-    finalRate = Math.round(finalRate);
+    finalRate = Math.round(finalRate / 1000) * 1000;
     const effectiveRatePerKm = Math.round(finalRate / distanceNTtoKT);
 
     // ============================================
