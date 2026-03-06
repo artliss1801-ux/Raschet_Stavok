@@ -70,7 +70,7 @@ export function RateForm({ onSubmit, isLoading }: RateFormProps) {
     dangerType: 'none',
     additionalPoints: 0,
     gensetRequired: false,
-    placementType: 'edge',
+    placementType: 'middle',
     tspDifferentFromNt: false,
     tspCity: '',
   });
@@ -393,13 +393,13 @@ export function RateForm({ onSubmit, isLoading }: RateFormProps) {
                   <SelectValue placeholder="Выберите размещение" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="edge">Под срез прицепа (стандарт)</SelectItem>
-                  <SelectItem value="middle">На середине прицепа (+12%)</SelectItem>
+                  <SelectItem value="middle">На середине прицепа (стандарт)</SelectItem>
+                  <SelectItem value="edge">Под срез прицепа (+12%)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-slate-500">
-                {formData.placementType === 'middle' 
-                  ? 'Усложнённая погрузка/разгрузка, требуется кран или спец. техника'
+                {formData.placementType === 'edge' 
+                  ? 'Сложнее погрузка/разгрузка, требуется кран или спец. техника'
                   : 'Стандартное размещение, удобная погрузка/разгрузка'}
               </p>
             </div>

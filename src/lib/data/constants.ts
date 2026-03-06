@@ -52,8 +52,8 @@ export const CONTAINER_COEFFICIENTS = {
 
 // Коэффициент размещения 20-футового контейнера
 export const PLACEMENT_COEFFICIENTS = {
-  'edge': 1.00,     // Под срез прицепа (стандарт)
-  'middle': 1.12,   // На середине прицепа (+12%, сложнее погрузка/разгрузка)
+  'edge': 1.12,     // Под срез прицепа (+12%, сложнее погрузка/разгрузка)
+  'middle': 1.00,   // На середине прицепа (стандарт)
 } as const;
 
 export type PlacementType = keyof typeof PLACEMENT_COEFFICIENTS;
