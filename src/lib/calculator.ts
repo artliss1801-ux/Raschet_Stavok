@@ -1,5 +1,5 @@
 // ============================================
-// МОДЕЛЬ РАСЧЁТА СТАВКИ v11.0
+// МОДЕЛЬ РАСЧЁТА СТАВКИ v11.1
 // ============================================
 // Формула: С = max(Минимум, Р × К × М)
 //
@@ -9,7 +9,9 @@
 // М - коэффициенты (контейнер, размещение, вес, регион, опасность)
 // Минимум - минимальная ставка за рейс (~28000-30000 руб)
 //
-// Ключевые изменения v11.0:
+// Ключевые изменения v11.1:
+// - Добавлены города Северной Осетии (Алагир, Владикавказ, Беслан, Моздок)
+// - Региональный коэффициент для Северной Осетии увеличен до 1.25
 // - Динамические коэффициенты 20DC по расстоянию
 // - Коэффициент размещения 20-футового контейнера
 // - Коэффициент тяжёлого груза (>24т)
@@ -107,6 +109,8 @@ function getRegionByCityName(cityName: string): string {
   if (name.includes('пятигорск') || name.includes('кисловодск') || name.includes('ессентуки') || name.includes('минеральные')) return 'kmv';
   if (name.includes('грозный') || name.includes('знаменское') || name.includes('гудермес')) return 'chechnya';
   if (name.includes('махачкала') || name.includes('хасавюрт') || name.includes('дербент')) return 'dagestan';
+  // Северная Осетия (РСО-Алания)
+  if (name.includes('алагир') || name.includes('владикавказ') || name.includes('беслан') || name.includes('моздок') || name.includes('ардон') || name.includes('эльхотово')) return 'north_ossetia';
   if (name.includes('воронеж') || name.includes('белгород') || name.includes('курск') || name.includes('липецк') || name.includes('тамбов')) return 'chernozem';
   if (name.includes('ростов') || name.includes('таганрог') || name.includes('батайск')) return 'south';
   if (name.includes('казань') || name.includes('самара') || name.includes('саратов')) return 'povolzhye';
