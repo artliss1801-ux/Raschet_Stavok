@@ -1,5 +1,5 @@
 // ============================================
-// МОДЕЛЬ РАСЧЁТА СТАВКИ v11.3
+// МОДЕЛЬ РАСЧЁТА СТАВКИ v11.6
 // ============================================
 // Формула: С = max(Минимум, Р × К × М)
 //
@@ -9,12 +9,12 @@
 // М - коэффициенты (контейнер, размещение, вес, регион, опасность)
 // Минимум - минимальная ставка за рейс (~28000-30000 руб)
 //
-// Ключевые изменения v11.3:
-// - 20DC на расстоянии 700-1000 км: коэф. увеличен до 1.22
-// - Тяжёлый груз ≥26т: коэф. увеличен до 1.40
-// - Тяжёлый груз ≥24т: коэф. увеличен до 1.25
-// - Для Кавказа тяжёлые грузы: +10% к базовому heavyCoef
-// - Точная калибровка по реальным ставкам (расхождение ≤1%)
+// Ключевые изменения v11.6:
+// - Тяжёлый груз 24т: коэф. снижен с 1.25 до 1.10
+// - Тяжёлый груз 26т: коэф. 1.40
+// - Добавлена Калужская область (Ворсино, Калуга, Обнинск): коэф. 1.02
+// - Добавлены города: Клин, Камышин, Альметьевск, Боровичи
+// - Экспорт круговой: гружёный × ставка + порожний × 50%
 // Обновлено: март 2026
 // ============================================
 
@@ -61,7 +61,7 @@ function getHeavyWeightCoef(weight: number, region: string): number {
   if (weight >= 26) {
     return isCaucasus ? 1.50 : 1.40;  // Сверхтяжёлый
   } else if (weight >= 24) {
-    return isCaucasus ? 1.35 : 1.25;  // Тяжёлый
+    return isCaucasus ? 1.20 : 1.10;  // Тяжёлый
   }
   return 1.00;
 }
@@ -101,23 +101,30 @@ const RETURN_CARGO_DB: Record<string, ReturnCargoData> = {
 
 function getRegionByCityName(cityName: string): string {
   const name = cityName?.toLowerCase() || '';
-  
-  if (name.includes('москва') || name.includes('чехов') || name.includes('подольск') || name.includes('химки') || name.includes('калуга') || name.includes('пушкино')) return 'moscow';
+
+  // Москва и МО
+  if (name.includes('москва') || name.includes('чехов') || name.includes('подольск') || name.includes('химки') || name.includes('пушкино') || name.includes('клин')) return 'moscow';
+  // Калужская область
+  if (name.includes('ворсино') || name.includes('калуга') || name.includes('обнинск')) return 'kaluga';
   if (name.includes('санкт-петербург') || name.includes('питер')) return 'spb';
   if (name.includes('новороссийск') || name.includes('краснодар') || name.includes('сочи') || name.includes('анапа')) return 'krasnodar';
   if (name.includes('пятигорск') || name.includes('кисловодск') || name.includes('ессентуки') || name.includes('минеральные')) return 'kmv';
   if (name.includes('грозный') || name.includes('знаменское') || name.includes('гудермес')) return 'chechnya';
   if (name.includes('махачкала') || name.includes('хасавюрт') || name.includes('дербент')) return 'dagestan';
+  // Ставропольский край
+  if (name.includes('ставрополь') || name.includes('невинномысск')) return 'stavropol';
   // Северная Осетия (РСО-Алания)
   if (name.includes('алагир') || name.includes('владикавказ') || name.includes('беслан') || name.includes('моздок') || name.includes('ардон') || name.includes('эльхотово')) return 'north_ossetia';
+  // Новгородская область
+  if (name.includes('боровичи') || name.includes('великий новгород') || name.includes('новгород')) return 'novgorod';
   if (name.includes('воронеж') || name.includes('белгород') || name.includes('курск') || name.includes('липецк') || name.includes('тамбов')) return 'chernozem';
   if (name.includes('ростов') || name.includes('таганрог') || name.includes('батайск')) return 'south';
-  if (name.includes('казань') || name.includes('самара') || name.includes('саратов')) return 'povolzhye';
+  if (name.includes('казань') || name.includes('самара') || name.includes('саратов') || name.includes('камышин') || name.includes('альметьевск')) return 'povolzhye';
   if (name.includes('волгоград') || name.includes('астрахань')) return 'south';
   if (name.includes('екатеринбург') || name.includes('челябинск') || name.includes('копейск')) return 'ural';
   if (name.includes('нижний новгород')) return 'nnovgorod_region';
   if (name.includes('минск') || name.includes('брест') || name.includes('гомель')) return 'belarus';
-  
+
   return 'central';
 }
 
